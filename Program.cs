@@ -1,221 +1,194 @@
-﻿
-
-
-
-using System.ComponentModel.Design;
-using System.Threading.Channels;
+﻿using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 
 namespace ConsoleFileManager
 {
-
     class Program
     {
 
         /// <summary>
-        /// Generates the prompt string that is displayed every time a user uses a commmand.
+        /// Display the full command list, along with the command usage and description.
         /// </summary>
-        /// <param name="currentPath"></param>
-        /// <param name="additionalArgs"></param>
-        private static void PrintPromptText(string currentPath, params string[] additionalArgs)
-        {
-
-            // Create the base string.
-            string szBaseString = currentPath + " » ";
-
-            // Iterate through each additional argument and create a formatted string.
-            if (additionalArgs.Count() > 0)
-            {
-                string args = "";
-                for (int i = 0; i < additionalArgs.Length; i++)
-                {
-                    args += additionalArgs[i];
-                    if (!(i == additionalArgs.Length - 1))
-                        args += " | ";
-                    else
-                        args += " » ";
-                }
-                    szBaseString += args;
-            }
-
-            // Print the formatted string to the console.
-            Console.Write(szBaseString);
-
-        }
-
-        /// <summary>
-        /// Prints the message that contains generic information.
-        /// </summary>
-        private static void DisplayGenericInfo()
-        {
-            string consoleMessage =
-                "\n" +
-                "  ┌ File Manager ───────────────────────────────────────────────────────────────────────────────────┐\n" +
-                "  │ > Avoid using folders and/or names with spaces in them as it can result in unexpected behavior. │\n" +
-                "  │ > Use 'help' for more information and/or usage of command(s).                                   │\n" +
-                "  └─────────────────────────────────────────────────────────────────────────────────────────────────┘\n";
-            Console.WriteLine(consoleMessage);
-        }
-
-        /// <summary>
-        /// Displays the help menu.
-        /// </summary>
-        private static void DisplayHelpMenu()
+        public static void DisplayHelpList()
         {
             Console.WriteLine();
-            Console.WriteLine("  ┌ Command information / usage ───────────────────────────────────┐");
-            Console.WriteLine("  │ > help (aliases: h) Displays the current menu.                 │");
-            Console.WriteLine("  │ > return (aliases: <) Returns the action to the baseline.      │");
-            Console.WriteLine("  │ > clear (aliases: c) Clears the console of all previous input. │");
-            Console.WriteLine("  │ > directory (aliases: dir) Manage directory related tasks.     │");
-            Console.WriteLine("  │ > file (aliases: f) Manage file related tasks.                 │");
-            Console.WriteLine("  └────────────────────────────────────────────────────────────────┘");
+            Console.WriteLine("┌───────────────────────────────────────────────┬───────────────────────────────────────────────────────────────┐");
+            Console.WriteLine("│ # Command usage \t\t\t\t│ # Description(s) \t\t\t\t\t\t│");
+            Console.WriteLine("╞═══════════════════════════════════════════════╪═══════════════════════════════════════════════════════════════╡");
+            Console.WriteLine("│ help \t\t\t\t\t\t│ Displays the help and information display. \t\t\t│");
+            Console.WriteLine("├───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤");
+            Console.WriteLine("│ clear \t\t\t\t\t│ Clears the content of the console. \t\t\t\t│");
+            Console.WriteLine("├───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤");
+            Console.WriteLine("│ exit \t\t\t\t\t\t│ Exits the application. \t\t\t\t\t│");
+            Console.WriteLine("├───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤");
+            Console.WriteLine("│ directory <command> \t\t\t\t│ Runs one of the valid directory commands. \t\t\t│");
+            Console.WriteLine("│  > set <target_path> \t\t\t\t│ Sets the target directory path.\t\t\t\t│");
+            Console.WriteLine("│  > list <target_path> \t\t\t│ Lists each folder in the specified directory. \t\t│");
+            Console.WriteLine("│  > create <folder_name> <target_path> \t│ Creates a new folder in the specified directory. \t\t│");
+            Console.WriteLine("│  > copy <target_path> <destination_path> \t│ Copies a folder to the specified directory. \t\t\t│");
+            Console.WriteLine("│  > move <target_path> <destination_path> \t│ Moves a folder to the specified directory. \t\t\t│");
+            Console.WriteLine("│  > delete <folder_name> <target_path> \t│ Deletes a folder in the specified directory. \t\t\t│");
+            Console.WriteLine("├───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤");
+            Console.WriteLine("│ file <command> \t\t\t\t│ Runs one of the valid file commands. \t\t\t\t│");
+            Console.WriteLine("│  > list <target_path> \t\t\t│ Lists each file in the specified directory. \t\t\t│");
+            Console.WriteLine("│  > create <folder_name> <target_path> \t│ Creates a new file in the specified directory. \t\t│");
+            Console.WriteLine("│  > copy <target_path> <destination_path> \t│ Copies a file to the specified directory. \t\t\t│");
+            Console.WriteLine("│  > move <target_path> <destination_path> \t│ Moves a file to the specified directory. \t\t\t│");
+            Console.WriteLine("│  > delete <folder_name> <target_path> \t│ Deletes a file in the specified directory. \t\t\t│");
+            Console.WriteLine("└───────────────────────────────────────────────┴───────────────────────────────────────────────────────────────┘");
             Console.WriteLine();
-        }
-
-        /// <summary>
-        /// Handles the transitions for directory related commands.
-        /// </summary>
-        /// <param name="currentPath"></param>
-        private static void MoveToFileInput(string currentPath)
-        {
-            // Determine which action to take based on the first argument of the user input.
-            while (true)
-            {
-                PrintPromptText(currentPath, "file");
-                string? userInput = Console.ReadLine().ToLower();
-                string[] userInputArgs = userInput.Split(' ');
-
-                switch (userInputArgs[0])
-                {
-                    case "help":
-                        DisplayHelpMenu();
-                        break;
-
-                    case "clear":
-                        Console.Clear();
-                        DisplayGenericInfo();
-                        break;
-
-                    case "return":
-                        Console.WriteLine();
-                        return;
-
-                    default:
-                        Console.WriteLine($" \"{userInputArgs[0]}\" is not a recognized command. Try again or use 'help' for more information.");
-                        Console.WriteLine();
-                        break;
-
-                }
-
-            }
 
         }
 
         /// <summary>
-        /// Handles the transitions for directory related commands.
+        /// Ensures that the path given is a existing path and that it isn't empty or null.
         /// </summary>
-        /// <param name="currentPath"></param>
-        private static void MoveToDirectoryInput(string currentPath)
+        /// <param name="directoryPath"></param>
+        /// <returns></returns>
+        private static string? GetValidDirectory(string directoryPath)
         {
-            // Determine which action to take based on the first argument of the user input.
-            while (true)
+            if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
             {
-                PrintPromptText(currentPath, "directory");
-                string? userInput = Console.ReadLine().ToLower();
-                string[] userInputArgs = userInput.Split(' ');
-
-                switch (userInputArgs[0])
-                {
-                    case "help":
-                        DisplayHelpMenu();
-                        break;
-
-                    case "clear":
-                        Console.Clear();
-                        DisplayGenericInfo();
-                        break;
-
-                    case "return":
-                        Console.WriteLine();
-                        return;
-
-                    default:
-                        Console.WriteLine($" \"{userInputArgs[0]}\" is not a recognized command. Try again or use 'help' for more information.");
-                        Console.WriteLine();
-                        break;
-
-                }
-
+                return directoryPath;
             }
-
+            else
+            {
+                return null;
+            }
         }
 
-        static void Main(string[] args)
+        static void Main()
         {
 
+            // Explicit object declaration(s).
             FileManager fileManager = new FileManager();
             DirectoryManager directoryManager = new DirectoryManager();
-            Logger logger = new Logger();
+
+            // Set the program state and default the directory to the UserProfile folder.
             bool programState = true;
+            string defaultDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).ToLower();
+            string currentDirectory = defaultDirectory;
+            char[] illegalCharacters = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
 
-            // Set the initial directory to the user profile directory (e.g. C:/users/ben).
-            string currentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-            // Shows the intial generic information screen.
-            DisplayGenericInfo();
-
-            // Start the application main loop.
+            // Loop the program until the exit command is ran, or the console is closed.
             while (programState)
             {
-                // Generate the prompt text and store the user reply.
-                PrintPromptText(currentPath);
-                string? userInput = Console.ReadLine().ToLower();
-                string[] userInputArgs = userInput.Split(' ');
+                // Prompt the user for input.
+                Console.Write(currentDirectory + " > ");
+                string userInput = Console.ReadLine().ToLower();
+                string[] userArgs = userInput.Split(' ');
 
-                // Handle potential errors using try-catch.
+                // Run the switch loop in a try-catch in-casse of unexpected errors.
                 try
                 {
-                    // Determine which action to take based on the first argument of the user input.
-                    switch (userInputArgs[0])
+
+                    // Determine which action to take based on the user input.
+                    switch (userArgs[0])
                     {
                         case "exit":
                             programState = false;
                             break;
 
                         case "help":
-                            DisplayHelpMenu();
+                            DisplayHelpList();
                             break;
 
                         case "clear":
                             Console.Clear();
-                            DisplayGenericInfo();
                             break;
 
                         case "directory":
-                            MoveToDirectoryInput(currentPath);
+
+                            string command = userArgs[1];
+
+                            // There has to be a much better way to do this portion of the code.
+                            // Once finished and everything functions as intended, refractor and fix it.
+                            if (command == "set")
+                            {
+                                if (userArgs.Length < 3)
+                                {
+                                    Console.WriteLine("> Invalid command usage, see 'help' for more information.");
+                                    break;
+                                }
+
+                                // Fetch the provided directory path including whitespaces.
+                                string path = userInput.Substring(14);
+                                if (GetValidDirectory(path) == null)
+                                {
+                                    Console.WriteLine("> The specified directory could not be found.");
+                                    break;
+                                }
+
+                                // Set the current path to the specified path.
+                                currentDirectory = path;
+                            }
+
+                            else if (command == "list") 
+                            {
+                                Console.WriteLine($"\n> Listing folders in '@{currentDirectory}'");
+                                directoryManager.ListDirectories(currentDirectory);
+                            }
+
+                            else if (command == "create")
+                            {
+                                // Ensures that there are the valid amount of values in the input.
+                                if (userArgs.Length < 3)
+                                {
+                                    Console.WriteLine("> Invalid command usage, see 'help' for more information.");
+                                    break;
+                                }
+
+                                // Ensures there are no illegal characters in the provided name.
+                                if (userArgs[2].Any(c => illegalCharacters.Contains(c)))
+                                {
+                                    Console.WriteLine("> Illegal directory characters found. Try a different name.");
+                                    break;
+                                }
+
+                                // Trim any leading or trailing whitespace from the input.
+                                if (userArgs[2].EndsWith(' '))
+                                {
+                                    userArgs[2] = userArgs[2].Trim();
+                                }
+
+                                // Create the folder if the checks have passed.
+                                directoryManager.CreateDirectory(Path.Combine(currentDirectory, userArgs[2]));
+
+                            }
+
+                            /* Add at a later time
+                            else if (command == "copy")
+                            */
+
+                            else if (command == "move") 
+                            {
+                                // Check arguments count
+                                // Store target path and destination path.
+                                // 
+                            }
+                            else if (command == "delete")
+                            {
+                            }
+
                             break;
 
                         case "file":
-                            MoveToFileInput(currentPath);
+                            Console.WriteLine("");
                             break;
 
                         default:
-                            Console.WriteLine($"Command \"{userInputArgs[0]}\" is not a recognized. Try again or use 'help' for more information.");
-                            Console.WriteLine();
+                            Console.WriteLine("Command not recognized. Try again or use 'help' for more information.");
                             break;
+
                     }
                 }
 
-                // Print the error message when an error occurs.
-                catch (Exception exception)
+                // Print a error message to the user to notify them of the error.
+                catch (Exception ex)
                 {
-                    logger.LogError(exception.Message);
+                    Console.WriteLine(ex.Message);
                 }
-
             }
-
         }
-
     }
-
 }
